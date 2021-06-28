@@ -1,2 +1,0 @@
-# numinix
-For numinix exam
