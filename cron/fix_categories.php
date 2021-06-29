@@ -1,7 +1,7 @@
 <?php
-require('includes/configure.php');
-ini_set('include_path', DIR_FS_CATALOG . PATH_SEPARATOR .
-ini_get('include_path'));
+require('../includes/configure.php');
+ini_set('../include_path', DIR_FS_CATALOG . PATH_SEPARATOR .
+ini_get('../include_path'));
 chdir(DIR_FS_CATALOG);
 require_once('includes/application_top.php');
 
@@ -19,20 +19,28 @@ updateQuery($sQ, $db);
  */
 function selectQuery($noProducts, $db) {
    
-    $sqlSelect = "SELECT * FROM categories WHERE categories_id NOT IN 
+    $sqlSelect = "SELECT * FROM ".TABLE_CATEGORIES." WHERE categories_id NOT IN 
     (SELECT categories.categories_id 
-                    FROM `categories` 
-                    RIGHT OUTER JOIN products_to_categories 
+                    FROM ".TABLE_CATEGORIES." categories
+                    RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
                     ON categories.categories_id = products_to_categories.categories_id
                     GROUP BY categories.categories_id) 
     AND categories_id NOT IN 
     (SELECT categories.parent_id 
-                    FROM `categories` 
-                    RIGHT OUTER JOIN products_to_categories 
+                    FROM ".TABLE_CATEGORIES." 
+                    RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
                     ON categories.categories_id = products_to_categories.categories_id
                     WHERE categories.parent_id <> 0
                     GROUP BY categories.parent_id)
-    AND parent_id = 0
+    AND categories_id NOT IN
+    (SELECT parent_id FROM ".TABLE_CATEGORIES." 
+                    WHERE categories_id IN ( SELECT categories.parent_id 
+                    FROM ".TABLE_CATEGORIES." categories
+                    RIGHT OUTER JOIN  ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+                    ON categories.categories_id = products_to_categories.categories_id
+                    WHERE categories.parent_id <> 0
+                    GROUP BY categories.parent_id ) 
+                    AND parent_id <> 0)
     AND categories_status <> 0
     GROUP BY categories_id";
 
@@ -52,21 +60,29 @@ function updateQuery($results, $db) {
     if ($results->recordCount() > 0) {
         echo "\n\n----------Updating/Disable category------------\n";
 
-        $updateSelect = "UPDATE categories SET categories_status = 0
+        $updateSelect = "UPDATE ".TABLE_CATEGORIES." SET categories_status = 0
         WHERE categories_id NOT IN 
         (SELECT categories.categories_id 
-                        FROM `categories` 
-                        RIGHT OUTER JOIN products_to_categories 
+                        FROM ".TABLE_CATEGORIES." categories 
+                        RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
                         ON categories.categories_id = products_to_categories.categories_id
                         GROUP BY categories.categories_id) 
         AND categories_id NOT IN 
         (SELECT categories.parent_id 
-                        FROM `categories` 
-                        RIGHT OUTER JOIN products_to_categories 
+                        FROM ".TABLE_CATEGORIES." categories
+                        RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
                         ON categories.categories_id = products_to_categories.categories_id
                         WHERE categories.parent_id <> 0
                         GROUP BY categories.parent_id)
-        AND parent_id = 0
+        AND categories_id NOT IN
+        (SELECT parent_id FROM ".TABLE_CATEGORIES." 
+                    WHERE categories_id IN ( SELECT categories.parent_id 
+                    FROM ".TABLE_CATEGORIES." categories
+                    RIGHT OUTER JOIN  ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+                    ON categories.categories_id = products_to_categories.categories_id
+                    WHERE categories.parent_id <> 0
+                    GROUP BY categories.parent_id ) 
+                    AND parent_id <> 0)
         AND categories_status <> 0";
     
         $updateResults = $db->Execute($updateSelect);
