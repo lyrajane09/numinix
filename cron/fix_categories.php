@@ -9,55 +9,54 @@ $noProducts = 0;
 $updateResults = 0;
 $catColumn = 'categories_id';
 
-$sQ = selectQuery($noProducts, $db);
+$query = "(SELECT categories.categories_id 
+            FROM ".TABLE_CATEGORIES." categories
+            RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+            ON categories.categories_id = products_to_categories.categories_id
+            WHERE products_to_categories.products_id IN 
+            (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
+            INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+            ON products.products_id = products_to_categories.products_id
+            WHERE products.products_status = 1)
+            GROUP BY categories.categories_id) 
+        AND categories_id NOT IN 
+            (SELECT categories.parent_id 
+            FROM ".TABLE_CATEGORIES." 
+            RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+            ON categories.categories_id = products_to_categories.categories_id
+            WHERE categories.parent_id <> 0
+            AND products_to_categories.products_id IN 
+            (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
+            INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+            ON products.products_id = products_to_categories.products_id
+            WHERE products.products_status = 1)
+            GROUP BY categories.parent_id)
+        AND categories_id NOT IN
+            (SELECT parent_id FROM ".TABLE_CATEGORIES." 
+            WHERE categories_id IN ( SELECT categories.parent_id 
+            FROM ".TABLE_CATEGORIES." categories
+            RIGHT OUTER JOIN  ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+            ON categories.categories_id = products_to_categories.categories_id
+            WHERE categories.parent_id <> 0
+            AND products_to_categories.products_id IN 
+            (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
+            INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+            ON products.products_id = products_to_categories.products_id
+            WHERE products.products_status = 1)
+            GROUP BY categories.parent_id ) 
+            AND parent_id <> 0)
+            AND categories_status <> 0";
+
+$sQ = selectQuery($noProducts, $db, $query);
 forLoop($sQ, $catColumn);
-updateQuery($sQ, $db);
+updateQuery($sQ, $db, $query);
 
 
 /**
  * query for viewing categories without products
  */
-function selectQuery($noProducts, $db) {
-   
-    $sqlSelect = "SELECT * FROM ".TABLE_CATEGORIES." WHERE categories_id NOT IN 
-    (SELECT categories.categories_id 
-                    FROM ".TABLE_CATEGORIES." categories
-                    RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                    ON categories.categories_id = products_to_categories.categories_id
-                    WHERE products_to_categories.products_id IN 
-                    (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
-                    INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                    ON products.products_id = products_to_categories.products_id
-                    WHERE products.products_status = 1)
-                    GROUP BY categories.categories_id) 
-    AND categories_id NOT IN 
-    (SELECT categories.parent_id 
-                    FROM ".TABLE_CATEGORIES." 
-                    RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                    ON categories.categories_id = products_to_categories.categories_id
-                    WHERE categories.parent_id <> 0
-                    AND products_to_categories.products_id IN 
-                    (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
-                    INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                    ON products.products_id = products_to_categories.products_id
-                    WHERE products.products_status = 1)
-                    GROUP BY categories.parent_id)
-    AND categories_id NOT IN
-    (SELECT parent_id FROM ".TABLE_CATEGORIES." 
-                    WHERE categories_id IN ( SELECT categories.parent_id 
-                    FROM ".TABLE_CATEGORIES." categories
-                    RIGHT OUTER JOIN  ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                    ON categories.categories_id = products_to_categories.categories_id
-                    WHERE categories.parent_id <> 0
-                    AND products_to_categories.products_id IN 
-                    (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
-                    INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                    ON products.products_id = products_to_categories.products_id
-                    WHERE products.products_status = 1)
-                    GROUP BY categories.parent_id ) 
-                    AND parent_id <> 0)
-    AND categories_status <> 0
-    GROUP BY categories_id";
+function selectQuery($noProducts, $db, $query) {
+    $sqlSelect = "SELECT * FROM ".TABLE_CATEGORIES." WHERE categories_id NOT IN ".$query." GROUP BY categories_id";
 
     $noProducts = $db->Execute($sqlSelect);
 
@@ -71,49 +70,12 @@ function selectQuery($noProducts, $db) {
 /**
  * Update / Disable query
  */
-function updateQuery($results, $db) {
+function updateQuery($results, $db, $query) {
     if ($results->recordCount() > 0) {
         echo "\n\n----------Updating/Disable category------------\n";
 
         $updateSelect = "UPDATE ".TABLE_CATEGORIES." SET categories_status = 0
-        WHERE categories_id NOT IN 
-        (SELECT categories.categories_id 
-                        FROM ".TABLE_CATEGORIES." categories 
-                        RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                        ON categories.categories_id = products_to_categories.categories_id
-                        WHERE products_to_categories.products_id IN 
-                        (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
-                        INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                        ON products.products_id = products_to_categories.products_id
-                        WHERE products.products_status = 1)
-                        GROUP BY categories.categories_id) 
-        AND categories_id NOT IN 
-        (SELECT categories.parent_id 
-                        FROM ".TABLE_CATEGORIES." categories
-                        RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                        ON categories.categories_id = products_to_categories.categories_id
-                        WHERE categories.parent_id <> 0
-                        AND products_to_categories.products_id IN 
-                        (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
-                        INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                        ON products.products_id = products_to_categories.products_id
-                        WHERE products.products_status = 1)
-                        GROUP BY categories.parent_id)
-        AND categories_id NOT IN
-        (SELECT parent_id FROM ".TABLE_CATEGORIES." 
-                    WHERE categories_id IN ( SELECT categories.parent_id 
-                    FROM ".TABLE_CATEGORIES." categories
-                    RIGHT OUTER JOIN  ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                    ON categories.categories_id = products_to_categories.categories_id
-                    WHERE categories.parent_id <> 0
-                    AND products_to_categories.products_id IN 
-                    (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
-                    INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
-                    ON products.products_id = products_to_categories.products_id
-                    WHERE products.products_status = 1)
-                    GROUP BY categories.parent_id ) 
-                    AND parent_id <> 0)
-        AND categories_status <> 0";
+        WHERE categories_id NOT IN ".$query;
     
         $updateResults = $db->Execute($updateSelect);
 
