@@ -24,6 +24,11 @@ function selectQuery($noProducts, $db) {
                     FROM ".TABLE_CATEGORIES." categories
                     RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
                     ON categories.categories_id = products_to_categories.categories_id
+                    WHERE products_to_categories.products_id IN 
+                    (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
+                    INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+                    ON products.products_id = products_to_categories.products_id
+                    WHERE products.products_status = 1)
                     GROUP BY categories.categories_id) 
     AND categories_id NOT IN 
     (SELECT categories.parent_id 
@@ -31,6 +36,11 @@ function selectQuery($noProducts, $db) {
                     RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
                     ON categories.categories_id = products_to_categories.categories_id
                     WHERE categories.parent_id <> 0
+                    AND products_to_categories.products_id IN 
+                    (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
+                    INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+                    ON products.products_id = products_to_categories.products_id
+                    WHERE products.products_status = 1)
                     GROUP BY categories.parent_id)
     AND categories_id NOT IN
     (SELECT parent_id FROM ".TABLE_CATEGORIES." 
@@ -39,6 +49,11 @@ function selectQuery($noProducts, $db) {
                     RIGHT OUTER JOIN  ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
                     ON categories.categories_id = products_to_categories.categories_id
                     WHERE categories.parent_id <> 0
+                    AND products_to_categories.products_id IN 
+                    (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
+                    INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+                    ON products.products_id = products_to_categories.products_id
+                    WHERE products.products_status = 1)
                     GROUP BY categories.parent_id ) 
                     AND parent_id <> 0)
     AND categories_status <> 0
@@ -66,6 +81,11 @@ function updateQuery($results, $db) {
                         FROM ".TABLE_CATEGORIES." categories 
                         RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
                         ON categories.categories_id = products_to_categories.categories_id
+                        WHERE products_to_categories.products_id IN 
+                        (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
+                        INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+                        ON products.products_id = products_to_categories.products_id
+                        WHERE products.products_status = 1)
                         GROUP BY categories.categories_id) 
         AND categories_id NOT IN 
         (SELECT categories.parent_id 
@@ -73,6 +93,11 @@ function updateQuery($results, $db) {
                         RIGHT OUTER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
                         ON categories.categories_id = products_to_categories.categories_id
                         WHERE categories.parent_id <> 0
+                        AND products_to_categories.products_id IN 
+                        (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
+                        INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+                        ON products.products_id = products_to_categories.products_id
+                        WHERE products.products_status = 1)
                         GROUP BY categories.parent_id)
         AND categories_id NOT IN
         (SELECT parent_id FROM ".TABLE_CATEGORIES." 
@@ -81,6 +106,11 @@ function updateQuery($results, $db) {
                     RIGHT OUTER JOIN  ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
                     ON categories.categories_id = products_to_categories.categories_id
                     WHERE categories.parent_id <> 0
+                    AND products_to_categories.products_id IN 
+                    (SELECT products.products_id FROM ".TABLE_PRODUCTS." products
+                    INNER JOIN ".TABLE_PRODUCTS_TO_CATEGORIES." products_to_categories
+                    ON products.products_id = products_to_categories.products_id
+                    WHERE products.products_status = 1)
                     GROUP BY categories.parent_id ) 
                     AND parent_id <> 0)
         AND categories_status <> 0";
